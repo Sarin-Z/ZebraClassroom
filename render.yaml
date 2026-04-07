@@ -1,0 +1,23 @@
+# render.yaml
+# One-click deploy configuration for Render.com
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: line-classroom-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    envVars:
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false          # fill in Render dashboard
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: TEACHER_USER_IDS
+        sync: false
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/classroom.db
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "False"
