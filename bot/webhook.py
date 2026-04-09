@@ -138,15 +138,12 @@ def _dispatch(name: str, args: list[str], user_id: str) -> str:
 
 def _send_reply(reply_token: str, text: str) -> None:
     """Send a single text reply via the LINE Messaging API."""
-    try:
-        with ApiClient(configuration) as api_client:
-            api = MessagingApi(api_client)
-            api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=reply_token,
-                    messages=[TextMessage(text=text)],
-                )
+    with ApiClient(configuration) as api_client:
+        api = MessagingApi(api_client)
+        api.reply_message(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[TextMessage(text=text)],
             )
-        logger.debug("Reply sent (token: %s...)", reply_token[:8])
-    except Exception as e:
-        logger.error("Failed to send reply: %s", e)
+        )
+    logger.debug("Reply sent (token: %s...)", reply_token[:8])

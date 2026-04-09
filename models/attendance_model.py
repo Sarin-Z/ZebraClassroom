@@ -4,7 +4,7 @@ models/attendance_model.py
 All database operations related to attendance.
 """
 
-import sqlite3
+from sqlalchemy.exc import IntegrityError
 from database import get_db
 from utils.time_utils import now_iso, today_str
 
@@ -26,11 +26,11 @@ def checkin_student(student_id: str) -> dict:
                 (student_id, today_str(), now_iso()),
             )
         return {"ok": True}
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return {"ok": False, "reason": "You have already checked in today."}
 
 
-def get_attendance_for_date(date: str) -> list[sqlite3.Row]:
+def get_attendance_for_date(date: str) -> list:
     """Return all attendance records for a given date (YYYY-MM-DD)."""
     with get_db() as conn:
         return conn.execute(

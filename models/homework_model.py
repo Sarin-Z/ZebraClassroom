@@ -4,7 +4,7 @@ models/homework_model.py
 All database operations related to homework assignments.
 """
 
-import sqlite3
+from sqlalchemy.exc import IntegrityError
 from database import get_db
 from utils.time_utils import now_iso
 
@@ -32,11 +32,11 @@ def create_homework(
                 (hw_code, title, description, due_date, created_by, now_iso()),
             )
         return {"ok": True}
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return {"ok": False, "reason": f"Homework code '{hw_code}' already exists."}
 
 
-def get_homework(hw_code: str) -> sqlite3.Row | None:
+def get_homework(hw_code: str):
     """Return the homework row for a given hw_code, or None."""
     with get_db() as conn:
         return conn.execute(
@@ -45,7 +45,7 @@ def get_homework(hw_code: str) -> sqlite3.Row | None:
         ).fetchone()
 
 
-def get_all_homework() -> list[sqlite3.Row]:
+def get_all_homework() -> list:
     """Return all homework assignments ordered by due date."""
     with get_db() as conn:
         return conn.execute(
