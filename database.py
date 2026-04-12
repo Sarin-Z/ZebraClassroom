@@ -50,9 +50,9 @@ def _make_engine():
         # Render sets DATABASE_URL with the legacy "postgres://" scheme.
         # SQLAlchemy 1.4+ requires "postgresql://".
         if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
-        elif db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
-            db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif db_url.startswith("postgresql://") and "+psycopg" not in db_url:
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
         logger.info("Database backend: PostgreSQL")
         return create_engine(
