@@ -5,7 +5,7 @@ Database connection and schema bootstrap.
 
 Supports two backends selected automatically at startup:
   • LOCAL  (no DATABASE_URL)  → SQLite via DATABASE_PATH
-  • RENDER (DATABASE_URL set) → PostgreSQL via psycopg2
+  • RENDER (DATABASE_URL set) → PostgreSQL via psycopg (v3)
 
 Public API — unchanged from the original SQLite version:
   get_db()   → returns a connection-like object (context manager, .execute())
@@ -75,15 +75,22 @@ _engine = _make_engine()
 
 
 # ── Parameter-style adapter ───────────────────────────────────────────────────
-# SQLite uses ?-style placeholders; PostgreSQL uses %s-style.
-# We translate at runtime so model files never need to know which backend
-# is active.
+# SQLAlchemy's text() always uses :name style — never ? or %s.
+# We convert positional ? placeholders → :p0, :p1, ... and turn the
+# params tuple into a matching dict so both SQLite and PostgreSQL work.
 
-def _adapt_sql(sql: str) -> str:
-    """Replace ? placeholders with %s when talking to PostgreSQL."""
-    if _engine.dialect.name == "postgresql":
-        return sql.replace("?", "%s")
-    return sql
+def _adapt_sql(sql: str, params: tuple) -> tuple[str, dict]:
+    """
+    Convert ?-style positional SQL + params tuple into
+    SQLAlchemy text()-compatible :p0/:p1/... style + dict.
+    """
+    param_dict = {}
+    new_sql = sql
+    for i, val in enumerate(params):
+        key = f"p{i}"
+        new_sql = new_sql.replace("?", f":{key}", 1)
+        param_dict[key] = val
+    return new_sql, param_dict
 
 
 # ── Connection wrapper ────────────────────────────────────────────────────────
@@ -116,7 +123,8 @@ class _Connection:
 
     # ── query helpers ─────────────────────────────────────────────────────
     def execute(self, sql: str, params=()):
-        result = self._conn.execute(text(_adapt_sql(sql)), params)
+        adapted_sql, param_dict = _adapt_sql(sql, params)
+        result = self._conn.execute(text(adapted_sql), param_dict)
         return _Cursor(result)
 
     def executescript(self, sql: str):
@@ -132,7 +140,8 @@ class _Connection:
                 continue
             clean = "\n".join(lines).strip()
             if clean:
-                self._conn.execute(text(_adapt_sql(clean)))
+                adapted_sql, _ = _adapt_sql(clean, ())
+                self._conn.execute(text(adapted_sql))
         self._conn.commit()
 
 
